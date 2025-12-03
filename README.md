@@ -13,7 +13,7 @@ A web application that translates Chinese text in PDF catalogues to English whil
 
 ## Live Demo
 
-[Your Vercel URL will be here after deployment]
+**[https://wenyi-pdf-translator-mateos-projects-6addce54.vercel.app](https://wenyi-pdf-translator-mateos-projects-6addce54.vercel.app)**
 
 ## How It Works
 
