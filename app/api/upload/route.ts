@@ -1,6 +1,9 @@
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const formData = await request.formData();
@@ -31,10 +34,4 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
