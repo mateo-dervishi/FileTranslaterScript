@@ -115,25 +115,9 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 text-[200px] chinese-char text-ink-100 select-none animate-pulse-soft">
-          文
-        </div>
-        <div className="absolute bottom-20 right-10 text-[200px] chinese-char text-ink-100 select-none animate-pulse-soft" style={{ animationDelay: "1.5s" }}>
-          译
-        </div>
-        <div className="absolute top-1/2 left-1/4 text-[100px] chinese-char text-ink-50 select-none opacity-50">
-          翻
-        </div>
-        <div className="absolute top-1/3 right-1/4 text-[80px] chinese-char text-ink-50 select-none opacity-30">
-          转
-        </div>
-      </div>
-
+    <main className="min-h-screen bg-white">
       {/* Main content */}
-      <div className="relative z-10 container mx-auto px-4 py-12 md:py-20">
+      <div className="container mx-auto px-4 py-12 md:py-20">
         {/* Header */}
         <motion.header 
           className="text-center mb-16"
@@ -303,65 +287,9 @@ export default function Home() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Features */}
-        <motion.div
-          className="mt-20 md:mt-32 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <Feature
-            icon={
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-              </svg>
-            }
-            title="Chinese → English"
-            description="Accurately translates all Chinese text while keeping English untouched"
-          />
-          <Feature
-            icon={
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-              </svg>
-            }
-            title="Layout Preserved"
-            description="Maintains original design, images, and backgrounds perfectly"
-          />
-          <Feature
-            icon={
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            }
-            title="High Quality"
-            description="Output files maintain maximum quality for professional use"
-          />
-        </motion.div>
-
-        {/* Footer */}
-        <motion.footer
-          className="mt-20 text-center text-ink-400 text-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-        >
-          <p>Built by Mateo Dervishi</p>
-        </motion.footer>
       </div>
     </main>
   );
 }
 
-function Feature({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="text-center p-6">
-      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-vermillion-50 flex items-center justify-center text-vermillion-600">
-        {icon}
-      </div>
-      <h3 className="text-lg font-medium text-ink-800 mb-2">{title}</h3>
-      <p className="text-ink-500 font-light">{description}</p>
-    </div>
-  );
-}
 
