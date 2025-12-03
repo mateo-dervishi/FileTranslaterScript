@@ -41,40 +41,64 @@ export default function Home() {
     });
 
     try {
+      // Step 1: Upload file to Vercel Blob
       const formData = new FormData();
       formData.append("file", file);
 
-      setState({
-        status: "processing",
-        progress: 20,
-        message: "Analyzing document...",
-      });
-
-      const response = await fetch("/api/translate", {
+      const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
-      if (!response.ok) {
-        // Try to parse as JSON, fallback to status text
+      if (!uploadResponse.ok) {
+        const error = await uploadResponse.json();
+        throw new Error(error.error || "Upload failed");
+      }
+
+      const { url: blobUrl } = await uploadResponse.json();
+
+      setState({
+        status: "processing",
+        progress: 30,
+        message: "Translating Chinese text...",
+      });
+
+      // Step 2: Send blob URL to translation API
+      const translateResponse = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: blobUrl }),
+      });
+
+      if (!translateResponse.ok) {
         let errorMessage = "Translation failed";
         try {
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const error = await response.json();
-            errorMessage = error.error || errorMessage;
-          } else {
-            const text = await response.text();
-            errorMessage = text || `Server error: ${response.status}`;
-          }
+          const error = await translateResponse.json();
+          errorMessage = error.error || errorMessage;
         } catch {
-          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+          errorMessage = `Server error: ${translateResponse.status}`;
         }
         throw new Error(errorMessage);
       }
 
-      // Get the blob from response
-      const blob = await response.blob();
+      setState({
+        status: "processing",
+        progress: 80,
+        message: "Preparing download...",
+      });
+
+      // Step 3: Get the translated PDF
+      const result = await translateResponse.json();
+      
+      if (!result.success || !result.pdf) {
+        throw new Error(result.error || "No PDF in response");
+      }
+
+      // Convert base64 to blob
+      const pdfBytes = Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0));
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
       const downloadUrl = URL.createObjectURL(blob);
       const originalName = file.name.replace(".pdf", "");
 
@@ -159,7 +183,7 @@ export default function Home() {
                     transition-all duration-300 ease-out
                     ${isDragActive 
                       ? "border-vermillion-500 bg-vermillion-50 scale-[1.02]" 
-                      : "border-ink-200 hover:border-ink-300 bg-white/50 hover:bg-white/80"
+                      : "border-ink-200 hover:border-ink-300 bg-white hover:bg-gray-50"
                     }
                   `}
                 >
@@ -190,9 +214,6 @@ export default function Home() {
                     <p className="mt-2 text-ink-400">
                       or <span className="text-vermillion-600 hover:text-vermillion-700 underline underline-offset-4">browse files</span>
                     </p>
-                    <p className="mt-6 text-sm text-ink-300">
-                      Supports PDF files up to 100MB
-                    </p>
                   </div>
                 </div>
 
@@ -213,7 +234,7 @@ export default function Home() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
-                className="file-card rounded-2xl border border-ink-200 p-12 md:p-16 text-center"
+                className="rounded-2xl border border-ink-200 bg-white p-12 md:p-16 text-center"
               >
                 <div className="w-20 h-20 mx-auto mb-6 relative">
                   <svg className="w-20 h-20 animate-spin text-ink-200" viewBox="0 0 24 24">
@@ -239,7 +260,7 @@ export default function Home() {
                 {/* Progress bar */}
                 <div className="w-full h-2 bg-ink-100 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full progress-bar rounded-full"
+                    className="h-full bg-vermillion-500 rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${state.progress}%` }}
                     transition={{ duration: 0.5 }}
@@ -254,7 +275,7 @@ export default function Home() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
-                className="file-card rounded-2xl border border-ink-200 p-12 md:p-16 text-center"
+                className="rounded-2xl border border-ink-200 bg-white p-12 md:p-16 text-center"
               >
                 <div className="w-20 h-20 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
                   <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,10 +307,7 @@ export default function Home() {
             ) : null}
           </AnimatePresence>
         </motion.div>
-
       </div>
     </main>
   );
 }
-
-

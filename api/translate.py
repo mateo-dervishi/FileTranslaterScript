@@ -1,12 +1,15 @@
 """
 PDF Catalogue Translator API
 Translates Chinese text to English while preserving layout, images, and English text.
+Handles files via URL (from Vercel Blob storage).
 """
 
 from http.server import BaseHTTPRequestHandler
 import json
 import io
-import cgi
+import urllib.request
+import urllib.parse
+import os
 
 try:
     import fitz  # PyMuPDF
@@ -142,6 +145,13 @@ def process_pdf(input_bytes: bytes) -> bytes:
     return output_buffer.getvalue()
 
 
+def download_file(url: str) -> bytes:
+    """Download file from URL"""
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req, timeout=120) as response:
+        return response.read()
+
+
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
@@ -152,56 +162,35 @@ class handler(BaseHTTPRequestHandler):
     
     def do_POST(self):
         try:
-            content_type = self.headers.get('Content-Type', '')
             content_length = int(self.headers.get('Content-Length', 0))
             
             if content_length == 0:
                 self._send_json_error(400, "No content received")
                 return
             
-            if content_length > 100 * 1024 * 1024:  # 100MB limit
-                self._send_json_error(413, "File too large. Maximum size is 100MB")
-                return
-            
-            if 'multipart/form-data' not in content_type:
-                self._send_json_error(400, "Content-Type must be multipart/form-data")
-                return
-            
-            # Parse multipart data
-            try:
-                form = cgi.FieldStorage(
-                    fp=self.rfile,
-                    headers=self.headers,
-                    environ={
-                        'REQUEST_METHOD': 'POST',
-                        'CONTENT_TYPE': content_type,
-                    }
-                )
-            except Exception as e:
-                self._send_json_error(400, f"Failed to parse form data: {str(e)}")
-                return
-            
-            if 'file' not in form:
-                self._send_json_error(400, "No file field in form data")
-                return
-            
-            file_item = form['file']
-            if not hasattr(file_item, 'file') or not file_item.file:
-                self._send_json_error(400, "Invalid file upload")
-                return
+            # Read JSON body with file URL
+            body = self.rfile.read(content_length)
             
             try:
-                file_content = file_item.file.read()
+                data = json.loads(body.decode('utf-8'))
+            except json.JSONDecodeError:
+                self._send_json_error(400, "Invalid JSON")
+                return
+            
+            file_url = data.get('url')
+            if not file_url:
+                self._send_json_error(400, "No file URL provided")
+                return
+            
+            # Download file from blob storage
+            try:
+                file_content = download_file(file_url)
             except Exception as e:
-                self._send_json_error(400, f"Failed to read file: {str(e)}")
+                self._send_json_error(500, f"Failed to download file: {str(e)}")
                 return
             
             if not file_content:
                 self._send_json_error(400, "Empty file")
-                return
-            
-            if len(file_content) < 100:
-                self._send_json_error(400, "File too small to be a valid PDF")
                 return
             
             # Check PDF magic bytes
@@ -219,14 +208,23 @@ class handler(BaseHTTPRequestHandler):
                 self._send_json_error(500, f"Translation failed: {str(e)}")
                 return
             
-            # Send success response
+            # Return the PDF directly (base64 encoded for JSON response)
+            import base64
+            output_base64 = base64.b64encode(output_pdf).decode('utf-8')
+            
+            response = json.dumps({
+                "success": True,
+                "pdf": output_base64,
+                "size": len(output_pdf)
+            })
+            response_bytes = response.encode('utf-8')
+            
             self.send_response(200)
-            self.send_header('Content-Type', 'application/pdf')
-            self.send_header('Content-Disposition', 'attachment; filename="translated.pdf"')
-            self.send_header('Content-Length', str(len(output_pdf)))
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(response_bytes)))
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(output_pdf)
+            self.wfile.write(response_bytes)
             
         except Exception as e:
             self._send_json_error(500, f"Unexpected error: {str(e)}")
@@ -244,7 +242,7 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         response = json.dumps({
             "name": "PDF Translator API",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "status": "ready",
             "dependencies": {
                 "pymupdf": fitz is not None,
@@ -260,4 +258,4 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(response_bytes)
     
     def log_message(self, format, *args):
-        pass  # Suppress logging
+        pass
