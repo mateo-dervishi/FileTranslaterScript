@@ -142,23 +142,6 @@ export default function Home() {
     <main className="min-h-screen bg-white">
       {/* Main content */}
       <div className="container mx-auto px-4 py-12 md:py-20">
-        {/* Header */}
-        <motion.header 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-5xl md:text-7xl font-light tracking-tight text-ink-950 mb-4">
-            <span className="chinese-char">文译</span>{" "}
-            <span className="text-vermillion-600">Wényì</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-ink-500 font-light max-w-2xl mx-auto">
-            Transform Chinese catalogues into English
-            <br />
-            <span className="text-ink-400">while preserving every detail</span>
-          </p>
-        </motion.header>
 
         {/* Upload area */}
         <motion.div
